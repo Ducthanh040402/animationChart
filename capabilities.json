@@ -1,0 +1,145 @@
+{
+  "dataRoles": [
+    {
+      "displayName": "X-Value",
+      "name": "x-value",
+      "kind": "Grouping"
+    },
+    {
+      "displayName": "Y-Value",
+      "name": "y-value",
+      "kind": "Measure"
+
+    },
+    {
+      "displayName": "Index",
+      "name": "index",
+      "kind": "Measure"
+
+    }
+  ],
+  "objects": {
+    "dataPoint": {
+      "displayName": "Data Point Settings",
+      "properties": {
+        "defaultColor": {
+          "displayName": "Chart Color",
+          "type": {
+            "fill": {
+              "solid": {
+                "color": true
+              }
+            }
+          }
+        },
+        "colorAfterTransition": {
+          "displayName": "Color Transition",
+          "type": {
+            "fill": {
+              "solid": {
+                "color": true
+              }
+            }
+          }
+        },
+        "fontSize": {
+          "displayName": "Point Size",
+          "type": {
+            "numeric": true
+          }
+        },
+        "sortData":{
+          "type": {
+            "bool": true
+          }
+        }
+      }
+    },
+    "transitionSetting": {
+      "displayName": "Transition (Default 1s)",
+      "properties": {
+        "speedTransition": {
+          "type": {
+            "numeric": true
+          }
+        },
+        "lineorPoint":{
+          "type": {
+            "bool": true
+          }
+        },
+        "showPoint":{
+          "type": {
+            "bool": true
+          }
+        }
+      }
+    },
+    "ishowGrid": {
+      "displayName": "Axis and Gridlines",
+      "properties": {
+        "showGird": {
+          "type": {
+            "bool": true
+          }
+        },
+        "showAxis": {
+          "type": {
+            "bool": true
+          }
+        },
+        "ticksX":{
+          "type": {
+            "numeric": true
+          }
+        },
+        "ticksY":{
+          "type": {
+            "numeric": true
+          }
+        }
+      }
+    }
+  },
+  "dataViewMappings": [
+    {
+      "categorical": {
+        "categories": {
+          "for": {
+            "in": "x-value"
+          },
+          "dataReductionAlgorithm": {
+                        "window": {
+                            "count": 30000
+                        }
+                    }
+        },
+        "values": {
+          "select": [
+            {
+              "for": {
+                "in": "y-value"
+              },
+              "dataReductionAlgorithm": {
+                        "window": {
+                            "count": 30000
+                        }
+                    }
+            },
+            {
+              "for": {
+                "in": "index"
+              },
+              "dataReductionAlgorithm": {
+                        "window": {
+                            "count": 30000
+                        }
+                    }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "privileges": []
+}
