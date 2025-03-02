@@ -67,7 +67,7 @@ export class Visual implements IVisual {
         return [{
             displayName: String(displayName),
             value: String(valueDisplace),
-            color: "red",
+            color: "green",
             header: "Point value"
         }];
     }
