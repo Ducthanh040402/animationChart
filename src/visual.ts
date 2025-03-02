@@ -1,7 +1,17 @@
 import { formattingSettings, FormattingSettingsService } from "powerbi-visuals-utils-formattingmodel";
 import powerbi from "powerbi-visuals-api";
 
-
+import {
+    BaseType,
+    select as d3Select,
+    Selection as d3Selection
+} from "d3-selection";
+import {
+    scaleBand,
+    scaleLinear,
+    ScaleLinear,
+    ScaleBand
+} from "d3-scale";
 import * as d3 from "d3"
 import VisualConstructorOptions = powerbi.extensibility.visual.VisualConstructorOptions;
 import VisualUpdateOptions = powerbi.extensibility.visual.VisualUpdateOptions;
@@ -9,11 +19,14 @@ import IVisual = powerbi.extensibility.visual.IVisual;
 import { VisualFormattingSettingsModel } from "./settings";
 import FormattingModel = powerbi.visuals.FormattingModel
 import IVisualHost = powerbi.extensibility.visual.IVisualHost;
-import { createTooltipServiceWrapper, ITooltipServiceWrapper } from "powerbi-visuals-utils-tooltiputils";
+import { createTooltipServiceWrapper, ITooltipServiceWrapper,TooltipEnabledDataPoint } from "powerbi-visuals-utils-tooltiputils";
 import { Axis, axisBottom } from "d3-axis";
 import VisualTooltipDataItem = powerbi.extensibility.VisualTooltipDataItem;
+import { textMeasurementService, valueFormatter } from "powerbi-visuals-utils-formattingutils";
+import { dataViewObjects} from "powerbi-visuals-utils-dataviewutils";
+import ILocalizationManager = powerbi.extensibility.ILocalizationManager;
 
-
+type Selection<T1 extends BaseType, T2 = any> = d3Selection<T1, T2, any, any>;
 
 
 export class Visual implements IVisual {
@@ -25,6 +38,7 @@ export class Visual implements IVisual {
     private data: Array<{ x: number; y: number }>;
     private viewport: powerbi.IViewport;
     private isInitialRender: boolean = false;
+    private localizationManager: ILocalizationManager;
 
     constructor(options: VisualConstructorOptions) {
         this.host = options.host;
@@ -32,6 +46,7 @@ export class Visual implements IVisual {
         this.formattingSettingsService = new FormattingSettingsService();
         this.settings = new VisualFormattingSettingsModel();
         this.tooltipServiceWrapper = createTooltipServiceWrapper(this.host.tooltipService, options.element);
+        this.localizationManager = this.host.createLocalizationManager();
 
     }
 
@@ -43,7 +58,19 @@ export class Visual implements IVisual {
      *                                        and the dataView which contains all the data
      *                                        the visual had queried.
      */
-
+    private getTooltipData(value: any): VisualTooltipDataItem[] {
+        console.log(value)
+        // const formattedValue = valueFormatter.format(value.value, value.format);
+        // const language = this.localizationManager.getDisplayName("LanguageKey");
+        const displayName = value.x;
+        const valueDisplace = value.y
+        return [{
+            displayName: String(displayName),
+            value: String(valueDisplace),
+            color: "red",
+            header: "Point value"
+        }];
+    }
     public update(options: VisualUpdateOptions): void {
         this.settings = this.formattingSettingsService.populateFormattingSettingsModel(
             VisualFormattingSettingsModel, options.dataViews);
@@ -133,6 +160,8 @@ export class Visual implements IVisual {
             .attr("width", width)
             .attr("height", height);
 
+        console.log(this.getTooltipData(this.data))
+
         const xScale = d3.scaleLinear()
             .domain([d3.min(data, d => d.x)!, d3.max(data, d => d.x)!])
             .range([50, width - 50]); // Padding 50
@@ -159,6 +188,7 @@ export class Visual implements IVisual {
             .tickSize(-height + 2 * padding)
             .tickFormat(() => "");
 
+        console.log(gridX)    
         const gridY = d3.axisLeft(yScale)
             .tickSize(-width + 2 * padding)
             .tickFormat(() => "");
@@ -203,11 +233,17 @@ export class Visual implements IVisual {
             .attr("stroke", lineColor)
             .attr("stroke-width", lineWidth)
             .style("opacity", 1)
+
+
+        
         // .transition()
         // .duration(1000)
         // .style("opacity", 1) 
         // .delay(realspeed); 
-
+        this.tooltipServiceWrapper.addTooltip<TooltipEnabledDataPoint>(
+            svg.selectAll("path"),
+            (data: TooltipEnabledDataPoint) => this.getTooltipData(data)
+        );
         if (isShowPoint) {
             svg.selectAll("circle")
                 .data(data)
@@ -243,11 +279,13 @@ export class Visual implements IVisual {
         const xScale = d3.scaleLinear()
             .domain([d3.min(data, d => d.x)!, d3.max(data, d => d.x)!])
             .range([50, width - 50]); // Padding 50
-
+        console.log([d3.min(data, d => d.x)!, d3.max(data, d => d.x)!])
         const yScale = d3.scaleLinear()
             .domain([d3.min(data, d => d.y)!, d3.max(data, d => d.y)!])
             .range([height - 50, 50]); // Padding 50
+        console.log([d3.min(data, d => d.y)!, d3.max(data, d => d.y)!])
 
+        console.log(yScale)    
         var realspeed = 100; // ms
         const speed = Number(this.settings.speedTransition.speedShowPoint.value);
         if (speed !== 0) {
@@ -256,7 +294,7 @@ export class Visual implements IVisual {
         var circles = svg.selectAll("circle").data(data);
 
         const xAxis = d3.axisBottom(xScale).ticks(6);
-        const yAxis = d3.axisLeft(yScale).ticks(6);
+        const yAxis = d3.axisLeft(yScale).ticks(3);
 
         // console.log(xAxis)
         const gridX = d3.axisBottom(xScale)
@@ -266,6 +304,7 @@ export class Visual implements IVisual {
         const gridY = d3.axisLeft(yScale)
             .tickSize(-width + 2 * padding)
             .tickFormat(() => "");
+        console.log(gridY)    
 
         if (this.settings.showGridlines.isShowGrid.value) {
             svg.append("g")
@@ -327,6 +366,12 @@ export class Visual implements IVisual {
                 .duration((data.length - 1) * realspeed)
                 .style("opacity", 1)
                 .style("fill", (d, i) => i >= data.length - 10 ? pointColor : this.settings.dataPointCard.colorAfterTransition.value.value);
+
+                console.log(this.getTooltipData(data))
+                this.tooltipServiceWrapper.addTooltip<TooltipEnabledDataPoint>(
+                    svg.selectAll("circle"),
+                    (data: TooltipEnabledDataPoint) => this.getTooltipData(data)
+                );
         }
         else {
             circles

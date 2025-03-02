@@ -12,6 +12,7 @@ export declare class Visual implements IVisual {
     private data;
     private viewport;
     private isInitialRender;
+    private localizationManager;
     constructor(options: VisualConstructorOptions);
     /**
      * Updates the state of the visual. Every sequential databinding and resize will call update.
@@ -21,6 +22,7 @@ export declare class Visual implements IVisual {
      *                                        and the dataView which contains all the data
      *                                        the visual had queried.
      */
+    private getTooltipData;
     update(options: VisualUpdateOptions): void;
     private startAnimation;
     private renderLine;

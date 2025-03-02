@@ -5,11 +5,11 @@ import VisualConstructorOptions = powerbiVisualsApi.extensibility.visual.VisualC
 import DialogConstructorOptions = powerbiVisualsApi.extensibility.visual.DialogConstructorOptions;
 var powerbiKey: any = "powerbi";
 var powerbi: any = window[powerbiKey];
-var PlayChart: IVisualPlugin = {
-    name: 'PlayChart',
+var PlayChart_DEBUG: IVisualPlugin = {
+    name: 'PlayChart_DEBUG',
     displayName: 'Play Chart',
     class: 'Visual',
-    apiVersion: '5.11.0',
+    apiVersion: '5.1.0',
     create: (options: VisualConstructorOptions) => {
         if (Visual) {
             return new Visual(options);
@@ -27,6 +27,6 @@ var PlayChart: IVisualPlugin = {
 if (typeof powerbi !== "undefined") {
     powerbi.visuals = powerbi.visuals || {};
     powerbi.visuals.plugins = powerbi.visuals.plugins || {};
-    powerbi.visuals.plugins["PlayChart"] = PlayChart;
+    powerbi.visuals.plugins["PlayChart_DEBUG"] = PlayChart_DEBUG;
 }
-export default PlayChart;
+export default PlayChart_DEBUG;
