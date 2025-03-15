@@ -1,4 +1,5 @@
 import powerbi from "powerbi-visuals-api";
+import { ScaleLinear } from "d3-scale";
 import VisualConstructorOptions = powerbi.extensibility.visual.VisualConstructorOptions;
 import VisualUpdateOptions = powerbi.extensibility.visual.VisualUpdateOptions;
 import IVisual = powerbi.extensibility.visual.IVisual;
@@ -27,6 +28,10 @@ export declare class Visual implements IVisual {
     private startAnimation;
     private renderLine;
     private renderPoint;
+    callTooltip(svg: any, viewport: powerbi.IViewport, data: Array<{
+        x: number;
+        y: number;
+    }>, xScale: ScaleLinear<number, number, never>, yScale: ScaleLinear<number, number, never>): void;
     private renderButton;
     getFormattingModel(): FormattingModel;
 }

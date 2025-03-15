@@ -183,21 +183,27 @@ class Visual {
      *                                        and the dataView which contains all the data
      *                                        the visual had queried.
      */
+    //#region Tooltip data
     getTooltipData(value) {
         console.log(value);
         // const formattedValue = valueFormatter.format(value.value, value.format);
         // const language = this.localizationManager.getDisplayName("LanguageKey");
         const displayName = value.x;
         const valueDisplace = value.y;
-        return [{
+        return [
+            {
                 displayName: String(displayName),
                 value: String(valueDisplace),
-                color: "red",
-                header: "Point value"
-            }];
+                color: "green",
+                header: "Point value",
+            },
+        ];
     }
+    //#endregion
+    //#region Update function
     update(options) {
-        this.settings = this.formattingSettingsService.populateFormattingSettingsModel(_settings__WEBPACK_IMPORTED_MODULE_2__/* .VisualFormattingSettingsModel */ .S, options.dataViews);
+        this.settings =
+            this.formattingSettingsService.populateFormattingSettingsModel(_settings__WEBPACK_IMPORTED_MODULE_2__/* .VisualFormattingSettingsModel */ .S, options.dataViews);
         if (!options.dataViews || !options.dataViews[0]) {
             return;
         }
@@ -208,11 +214,11 @@ class Visual {
         }
         const categories = categorical.categories[0].values;
         const values = categorical.values[0].values;
-        if (!(categorical.values[1])) {
+        if (!categorical.values[1]) {
             this.viewport = options.viewport;
             const data = categories.map((x, i) => ({
                 x: +x,
-                y: +values[i]
+                y: +values[i],
             }));
             this.data = data;
             if (this.settings.dataPointCard.sortData.value)
@@ -225,13 +231,13 @@ class Visual {
             else
                 this.renderLine(this.data, options.viewport, this.isInitialRender);
         }
-        /**** Have timestamp or index ****/
         else {
+            /**** Have timestamp or index ****/
             const indexTime = categorical.values[1].values;
             const combinedData = categories.map((category, i) => ({
                 category: category,
                 value: values[i],
-                indexTime: indexTime[i]
+                indexTime: indexTime[i],
             }));
             combinedData.sort((a, b) => {
                 if (a.indexTime < b.indexTime)
@@ -240,11 +246,11 @@ class Visual {
                     return 1;
                 return 0;
             });
-            const sortedCategories = combinedData.map(item => item.category);
-            const sortedValues = combinedData.map(item => item.value);
+            const sortedCategories = combinedData.map((item) => item.category);
+            const sortedValues = combinedData.map((item) => item.value);
             const data = sortedCategories.map((x, i) => ({
                 x: +x,
-                y: +sortedValues[i]
+                y: +sortedValues[i],
             }));
             this.data = data;
             if (this.settings.dataPointCard.sortData.value)
@@ -259,6 +265,7 @@ class Visual {
                 this.renderLine(this.data, options.viewport, this.isInitialRender);
         }
     }
+    //#endregion
     startAnimation(isInitialRender) {
         d3__WEBPACK_IMPORTED_MODULE_1__/* .select */ .Ltv(this.target).selectAll("*:not(button)").remove();
         const isPoint = this.settings.speedTransition.line_point_switch.value;
@@ -269,6 +276,7 @@ class Visual {
             this.renderLine(this.data, this.viewport, isInitialRender);
         }
     }
+    //#region Render Line
     renderLine(data, viewport, isInitialRender) {
         const width = viewport.width;
         const height = viewport.height;
@@ -276,24 +284,24 @@ class Visual {
         const lineColor = this.settings.dataPointCard.defaultColor.value.value;
         const lineWidth = this.settings.dataPointCard.fontSize.value;
         const isShowPoint = this.settings.speedTransition.showPointWhenLine.value;
+        const sizePoint = this.settings.dataPointCard.fontSize.value;
         var padding = 50;
         d3__WEBPACK_IMPORTED_MODULE_1__/* .select */ .Ltv(this.target).selectAll("*").remove();
-        this.renderButton();
         const svg = d3__WEBPACK_IMPORTED_MODULE_1__/* .select */ .Ltv(this.target)
             .append("svg")
             .attr("width", width)
             .attr("height", height);
         console.log(this.getTooltipData(this.data));
         const xScale = d3__WEBPACK_IMPORTED_MODULE_1__/* .scaleLinear */ .m4Y()
-            .domain([d3__WEBPACK_IMPORTED_MODULE_1__/* .min */ .jkA(data, d => d.x), d3__WEBPACK_IMPORTED_MODULE_1__/* .max */ .T9B(data, d => d.x)])
+            .domain([d3__WEBPACK_IMPORTED_MODULE_1__/* .min */ .jkA(data, (d) => d.x), d3__WEBPACK_IMPORTED_MODULE_1__/* .max */ .T9B(data, (d) => d.x)])
             .range([50, width - 50]); // Padding 50
         const yScale = d3__WEBPACK_IMPORTED_MODULE_1__/* .scaleLinear */ .m4Y()
-            .domain([d3__WEBPACK_IMPORTED_MODULE_1__/* .min */ .jkA(data, d => d.y), d3__WEBPACK_IMPORTED_MODULE_1__/* .max */ .T9B(data, d => d.y)])
+            .domain([d3__WEBPACK_IMPORTED_MODULE_1__/* .min */ .jkA(data, (d) => d.y), d3__WEBPACK_IMPORTED_MODULE_1__/* .max */ .T9B(data, (d) => d.y)])
             .range([height - 50, 50]); // Padding 50
         // console.log("DoneRendeer")
         const lineGenerator = d3__WEBPACK_IMPORTED_MODULE_1__/* .line */ .n8j()
-            .x(d => xScale(d.x))
-            .y(d => yScale(d.y))
+            .x((d) => xScale(d.x))
+            .y((d) => yScale(d.y))
             .curve(d3__WEBPACK_IMPORTED_MODULE_1__/* .curveLinear */ .lUB);
         var realspeed = 100; // ms
         const speed = Number(this.settings.speedTransition.speedShowPoint.value);
@@ -310,7 +318,8 @@ class Visual {
             .tickSize(-width + 2 * padding)
             .tickFormat(() => "");
         if (this.settings.showGridlines.isShowGrid.value) {
-            svg.append("g")
+            svg
+                .append("g")
                 .attr("class", "grid")
                 .attr("transform", `translate(0, ${height - padding})`)
                 .call(gridX)
@@ -318,7 +327,8 @@ class Visual {
                 .style("stroke", "#e0e0e0")
                 .style("opacity", 1)
                 .style("stroke-dasharray", "1,1");
-            svg.append("g")
+            svg
+                .append("g")
                 .attr("class", "grid")
                 .attr("transform", `translate(${padding}, 0)`)
                 .call(gridY)
@@ -328,45 +338,49 @@ class Visual {
                 .style("stroke-dasharray", "1,1");
         }
         if (this.settings.showGridlines.isShowAxis.value) {
-            svg.append("g")
+            svg
+                .append("g")
                 .attr("class", "x-axis")
                 .attr("transform", `translate(0, ${height - padding})`)
                 .call(xAxis)
-                .selectAll("path, line").remove();
-            svg.append("g")
+                .selectAll("path, line")
+                .remove();
+            svg
+                .append("g")
                 .attr("class", "y-axis")
                 .attr("transform", `translate(${padding}, 0)`)
                 .call(yAxis)
-                .selectAll("path, line").remove();
+                .selectAll("path, line")
+                .remove();
         }
-        svg.append("path")
+        svg
+            .append("path")
             .datum(data)
             .attr("d", lineGenerator)
             .attr("fill", "none")
             .attr("stroke", lineColor)
             .attr("stroke-width", lineWidth)
             .style("opacity", 1);
-        // .transition()
-        // .duration(1000)
-        // .style("opacity", 1) 
-        // .delay(realspeed); 
-        this.tooltipServiceWrapper.addTooltip(svg.selectAll("path"), (data) => this.getTooltipData(data));
+        this.callTooltip(svg, viewport, data, xScale, yScale);
         if (isShowPoint) {
-            svg.selectAll("circle")
+            svg
+                .selectAll("circle")
                 .data(data)
                 .enter()
                 .append("circle")
-                .attr("cx", d => xScale(d.x))
-                .attr("cy", d => yScale(d.y))
-                .attr("r", 4)
+                .attr("cx", (d) => xScale(d.x))
+                .attr("cy", (d) => yScale(d.y))
+                .attr("r", sizePoint)
                 .style("fill", pointColor)
                 .style("opacity", 1);
             // .transition()
             // .duration(1000)
-            // .style("opacity", 1) 
+            // .style("opacity", 1)
             // .delay((d, i) => i * realspeed);
         }
     }
+    //#endregion
+    //#region  Render Point
     renderPoint(data, viewport, isInitialRender) {
         const width = viewport.width;
         const height = viewport.height;
@@ -380,14 +394,11 @@ class Visual {
             .attr("width", width)
             .attr("height", height);
         const xScale = d3__WEBPACK_IMPORTED_MODULE_1__/* .scaleLinear */ .m4Y()
-            .domain([d3__WEBPACK_IMPORTED_MODULE_1__/* .min */ .jkA(data, d => d.x), d3__WEBPACK_IMPORTED_MODULE_1__/* .max */ .T9B(data, d => d.x)])
+            .domain([d3__WEBPACK_IMPORTED_MODULE_1__/* .min */ .jkA(data, (d) => d.x), d3__WEBPACK_IMPORTED_MODULE_1__/* .max */ .T9B(data, (d) => d.x)])
             .range([50, width - 50]); // Padding 50
-        console.log([d3__WEBPACK_IMPORTED_MODULE_1__/* .min */ .jkA(data, d => d.x), d3__WEBPACK_IMPORTED_MODULE_1__/* .max */ .T9B(data, d => d.x)]);
         const yScale = d3__WEBPACK_IMPORTED_MODULE_1__/* .scaleLinear */ .m4Y()
-            .domain([d3__WEBPACK_IMPORTED_MODULE_1__/* .min */ .jkA(data, d => d.y), d3__WEBPACK_IMPORTED_MODULE_1__/* .max */ .T9B(data, d => d.y)])
+            .domain([d3__WEBPACK_IMPORTED_MODULE_1__/* .min */ .jkA(data, (d) => d.y), d3__WEBPACK_IMPORTED_MODULE_1__/* .max */ .T9B(data, (d) => d.y)])
             .range([height - 50, 50]); // Padding 50
-        console.log([d3__WEBPACK_IMPORTED_MODULE_1__/* .min */ .jkA(data, d => d.y), d3__WEBPACK_IMPORTED_MODULE_1__/* .max */ .T9B(data, d => d.y)]);
-        console.log(yScale);
         var realspeed = 100; // ms
         const speed = Number(this.settings.speedTransition.speedShowPoint.value);
         if (speed !== 0) {
@@ -405,7 +416,8 @@ class Visual {
             .tickFormat(() => "");
         console.log(gridY);
         if (this.settings.showGridlines.isShowGrid.value) {
-            svg.append("g")
+            svg
+                .append("g")
                 .attr("class", "grid")
                 .attr("transform", `translate(0, ${height - padding})`)
                 .call(gridX)
@@ -413,7 +425,8 @@ class Visual {
                 .style("stroke", "#e0e0e0")
                 .style("opacity", 1)
                 .style("stroke-dasharray", "1,1");
-            svg.append("g")
+            svg
+                .append("g")
                 .attr("class", "grid")
                 .attr("transform", `translate(${padding}, 0)`)
                 .call(gridY)
@@ -423,23 +436,27 @@ class Visual {
                 .style("stroke-dasharray", "1,1");
         }
         if (this.settings.showGridlines.isShowAxis.value) {
-            svg.append("g")
+            svg
+                .append("g")
                 .attr("class", "x-axis")
                 .attr("transform", `translate(0, ${height - padding})`)
                 .call(xAxis)
-                .selectAll("path, line").remove();
-            svg.append("g")
+                .selectAll("path, line")
+                .remove();
+            svg
+                .append("g")
                 .attr("class", "y-axis")
                 .attr("transform", `translate(${padding}, 0)`)
                 .call(yAxis)
-                .selectAll("path, line").remove();
+                .selectAll("path, line")
+                .remove();
         }
         if (isInitialRender) {
             circles
                 .enter()
                 .append("circle")
-                .attr("cx", d => xScale(d.x))
-                .attr("cy", d => yScale(d.y))
+                .attr("cx", (d) => xScale(d.x))
+                .attr("cy", (d) => yScale(d.y))
                 .attr("r", sizePoint)
                 .style("fill", pointColor)
                 .style("opacity", 0)
@@ -449,51 +466,83 @@ class Visual {
                 .delay((d, i) => i * realspeed)
                 .transition()
                 .duration(1000)
-                .style("opacity", (d, i) => i >= data.length - 10 ? 1 : 0.1)
-                .style("fill", (d, i) => i >= data.length - 10 ? pointColor : this.settings.dataPointCard.colorAfterTransition.value.value)
+                .style("opacity", (d, i) => (i >= data.length - 10 ? 1 : 0.1))
+                .style("fill", (d, i) => i >= data.length - 10
+                ? pointColor
+                : this.settings.dataPointCard.colorAfterTransition.value.value)
                 .delay((d, i) => realspeed)
                 .transition()
                 .duration(1000)
-                .style("opacity", (d, i) => i >= data.length - 10 ? 1 : 0.1)
-                .style("fill", (d, i) => i >= data.length - 10 ? pointColor : this.settings.dataPointCard.colorAfterTransition.value.value)
+                .style("opacity", (d, i) => (i >= data.length - 10 ? 1 : 0.1))
+                .style("fill", (d, i) => i >= data.length - 10
+                ? pointColor
+                : this.settings.dataPointCard.colorAfterTransition.value.value)
                 .delay((d, i) => realspeed)
                 .transition()
                 .duration((data.length - 1) * realspeed)
                 .style("opacity", 1)
-                .style("fill", (d, i) => i >= data.length - 10 ? pointColor : this.settings.dataPointCard.colorAfterTransition.value.value);
-            console.log(this.getTooltipData(data));
-            this.tooltipServiceWrapper.addTooltip(svg.selectAll("circle"), (data) => this.getTooltipData(data));
+                .style("fill", (d, i) => i >= data.length - 10
+                ? pointColor
+                : this.settings.dataPointCard.colorAfterTransition.value.value);
+            this.callTooltip(svg, viewport, data, xScale, yScale);
         }
         else {
             circles
                 .enter()
                 .append("circle")
-                .attr("cx", d => xScale(d.x))
-                .attr("cy", d => yScale(d.y))
+                .attr("cx", (d) => xScale(d.x))
+                .attr("cy", (d) => yScale(d.y))
                 .attr("r", sizePoint)
                 .style("fill", pointColor)
                 .style("opacity", 1)
-                .style("fill", (d, i) => i >= data.length - 10 ? pointColor : this.settings.dataPointCard.colorAfterTransition.value.value);
-            // .transition()
-            // .duration(1000)
-            // .style("opacity", 1)
-            // .delay((d, i) => i * realspeed)
-            // .transition()
-            // .duration(1000)
-            // .style("opacity", (d, i) => i >= data.length - 10 ? 1 : 0.1)
-            // .style("fill", (d, i) => i >= data.length - 10 ? pointColor : this.settings.dataPointCard.colorAfterTransition.value.value)
-            // .delay((d, i) => realspeed)
-            // .transition()
-            // .duration(1000)
-            // .style("opacity", (d, i) => i >= data.length - 10 ? 1 : 0.1)
-            // .style("fill", (d, i) => i >= data.length - 10 ? pointColor : this.settings.dataPointCard.colorAfterTransition.value.value)
-            // .delay((d, i) => realspeed)
-            // .transition()  
-            // .duration((data.length-1)*realspeed)   
-            // .style("opacity", 0.8)  
-            // .style("fill", (d, i) => i >= data.length - 10 ? pointColor : this.settings.dataPointCard.colorAfterTransition.value.value);
+                .style("fill", (d, i) => i >= data.length - 10
+                ? pointColor
+                : this.settings.dataPointCard.colorAfterTransition.value.value);
+            this.callTooltip(svg, viewport, data, xScale, yScale);
         }
     }
+    //#endregion
+    callTooltip(svg, viewport, data, xScale, yScale) {
+        const width = viewport.width;
+        const height = viewport.height;
+        // Line highlight
+        const verticalLine = svg
+            .append("line")
+            .attr("class", "vertical-line")
+            .attr("y1", 50) // Padding top
+            .attr("y2", height - 50) // Padding bottom
+            .attr("stroke", "#000000")
+            .attr("stroke-width", 1)
+            .style("opacity", 0);
+        const highlightPoint = svg
+            .append("circle")
+            .attr("class", "highlight-point")
+            .attr("r", 5) // Kích thước điểm
+            .attr("fill", this.settings.dataPointCard.defaultColor.value.value) // Màu đỏ
+            .attr("stroke-width", 2)
+            .style("opacity", 0);
+        //mousemove event
+        svg.on("mousemove", (event) => {
+            const [mouseX] = d3__WEBPACK_IMPORTED_MODULE_1__/* .pointer */ .WnM(event);
+            const invertedX = xScale.invert(mouseX);
+            const closestPoint = data.reduce((prev, curr) => Math.abs(curr.x - invertedX) < Math.abs(prev.x - invertedX)
+                ? curr
+                : prev);
+            console.log(this.getTooltipData(closestPoint));
+            this.tooltipServiceWrapper.addTooltip(svg, () => this.getTooltipData(closestPoint));
+            const cx = xScale(closestPoint.x);
+            const cy = yScale(closestPoint.y);
+            verticalLine.attr("x1", cx).attr("x2", cx).style("opacity", 1);
+            highlightPoint.attr("cx", cx).attr("cy", cy).style("opacity", 1);
+        });
+        // Ẩn tooltip khi rời khỏi svg
+        svg.on("mouseleave", () => {
+            this.tooltipServiceWrapper.hide();
+            verticalLine.style("opacity", 0);
+            highlightPoint.style("opacity", 0);
+        });
+    }
+    //#region Render Button
     renderButton() {
         const buttonSize = 20;
         d3__WEBPACK_IMPORTED_MODULE_1__/* .select */ .Ltv(this.target).select("#reset-button").remove();
@@ -522,6 +571,7 @@ class Visual {
             this.startAnimation(this.isInitialRender);
         });
     }
+    //#endregion
     getFormattingModel() {
         return this.formattingSettingsService.buildFormattingModel(this.settings);
     }
@@ -4646,9 +4696,11 @@ function creatorFixed(fullname) {
 /***/ ((__unused_webpack___webpack_module__, __webpack_exports__, __webpack_require__) => {
 
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
-/* harmony export */   Lt: () => (/* reexport safe */ _select_js__WEBPACK_IMPORTED_MODULE_0__.A)
+/* harmony export */   Lt: () => (/* reexport safe */ _select_js__WEBPACK_IMPORTED_MODULE_1__.A),
+/* harmony export */   Wn: () => (/* reexport safe */ _pointer_js__WEBPACK_IMPORTED_MODULE_0__.A)
 /* harmony export */ });
-/* harmony import */ var _select_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(183);
+/* harmony import */ var _pointer_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(970);
+/* harmony import */ var _select_js__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(183);
 
 
 
@@ -4725,6 +4777,37 @@ var xhtml = "http://www.w3.org/1999/xhtml";
   xml: "http://www.w3.org/XML/1998/namespace",
   xmlns: "http://www.w3.org/2000/xmlns/"
 });
+
+
+/***/ }),
+
+/***/ 970:
+/***/ ((__unused_webpack___webpack_module__, __webpack_exports__, __webpack_require__) => {
+
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   A: () => (/* export default binding */ __WEBPACK_DEFAULT_EXPORT__)
+/* harmony export */ });
+/* harmony import */ var _sourceEvent_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(324);
+
+
+/* harmony default export */ function __WEBPACK_DEFAULT_EXPORT__(event, node) {
+  event = (0,_sourceEvent_js__WEBPACK_IMPORTED_MODULE_0__/* ["default"] */ .A)(event);
+  if (node === undefined) node = event.currentTarget;
+  if (node) {
+    var svg = node.ownerSVGElement || node;
+    if (svg.createSVGPoint) {
+      var point = svg.createSVGPoint();
+      point.x = event.clientX, point.y = event.clientY;
+      point = point.matrixTransform(node.getScreenCTM().inverse());
+      return [point.x, point.y];
+    }
+    if (node.getBoundingClientRect) {
+      var rect = node.getBoundingClientRect();
+      return [event.clientX - rect.left - node.clientLeft, event.clientY - rect.top - node.clientTop];
+    }
+  }
+  return [event.pageX, event.pageY];
+}
 
 
 /***/ }),
@@ -6087,6 +6170,21 @@ function empty() {
   return selector == null ? empty : function() {
     return this.querySelectorAll(selector);
   };
+}
+
+
+/***/ }),
+
+/***/ 324:
+/***/ ((__unused_webpack___webpack_module__, __webpack_exports__, __webpack_require__) => {
+
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   A: () => (/* export default binding */ __WEBPACK_DEFAULT_EXPORT__)
+/* harmony export */ });
+/* harmony default export */ function __WEBPACK_DEFAULT_EXPORT__(event) {
+  let sourceEvent;
+  while (sourceEvent = event.sourceEvent) event = sourceEvent;
+  return event;
 }
 
 
@@ -8331,6 +8429,7 @@ function defaultConstrain(transform, extent, translateExtent) {
 /* harmony export */   Ltv: () => (/* reexport safe */ d3_selection__WEBPACK_IMPORTED_MODULE_4__.Lt),
 /* harmony export */   T9B: () => (/* reexport safe */ d3_array__WEBPACK_IMPORTED_MODULE_0__.T9),
 /* harmony export */   V4s: () => (/* reexport safe */ d3_axis__WEBPACK_IMPORTED_MODULE_1__.V4),
+/* harmony export */   WnM: () => (/* reexport safe */ d3_selection__WEBPACK_IMPORTED_MODULE_4__.Wn),
 /* harmony export */   jkA: () => (/* reexport safe */ d3_array__WEBPACK_IMPORTED_MODULE_0__.jk),
 /* harmony export */   l78: () => (/* reexport safe */ d3_axis__WEBPACK_IMPORTED_MODULE_1__.l7),
 /* harmony export */   lUB: () => (/* reexport safe */ d3_shape__WEBPACK_IMPORTED_MODULE_5__.lU),
