@@ -76,7 +76,7 @@ class DataPointCardSettings extends FormattingSettingsCard {
 
 class SpeedTransition extends FormattingSettingsCard {
     speedShowPoint = new formattingSettings.NumUpDown({
-        
+
         name: "speedTransition",
         displayName: "Transition (Default 1s)",
         value: 1
@@ -102,25 +102,25 @@ class SpeedTransition extends FormattingSettingsCard {
 }
 
 class ShowGrid extends FormattingSettingsCard {
-    isShowGrid  = new formattingSettings.ToggleSwitch({
+    isShowGrid = new formattingSettings.ToggleSwitch({
         name: "showGird",
         displayName: "Show Gird",
         value: true
     });
-    isShowAxis  = new formattingSettings.ToggleSwitch({
+    isShowAxis = new formattingSettings.ToggleSwitch({
         name: "showAxis",
         displayName: "Show Axis",
         value: true
     });
     numTicksX = new formattingSettings.NumUpDown({
         name: "ticksX",
-        displayName: "Transparency X",
-        value: 0
+        displayName: "Ticks X",
+        value: 4
     });
     numTicksY = new formattingSettings.NumUpDown({
         name: "ticksY",
-        displayName: "Transparency Y",
-        value: 0
+        displayName: "Ticks Y",
+        value: 3
     });
     name: string = "ishowGrid";
     displayName: string = "Axis and Gridlines";
@@ -137,10 +137,10 @@ export class VisualFormattingSettingsModel extends FormattingSettingsModel {
     speedTransition = new SpeedTransition()
     showGridlines = new ShowGrid()
     cards = [this.dataPointCard,
-        this.speedTransition,
-        this.showGridlines
+    this.speedTransition,
+    this.showGridlines
     ];
-    
-    
+
+
 }
 

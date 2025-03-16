@@ -17,12 +17,14 @@ import IVisual = powerbi.extensibility.visual.IVisual;
 import { VisualFormattingSettingsModel } from "./settings";
 import FormattingModel = powerbi.visuals.FormattingModel;
 import IVisualHost = powerbi.extensibility.visual.IVisualHost;
+import ISelectionManager = powerbi.extensibility.ISelectionManager;
+import DataView = powerbi.DataView;
+import ISelectionId = powerbi.visuals.ISelectionId;
 import {
   createTooltipServiceWrapper,
   ITooltipServiceWrapper,
   TooltipEnabledDataPoint,
 } from "powerbi-visuals-utils-tooltiputils";
-import { Axis, axisBottom } from "d3-axis";
 import VisualTooltipDataItem = powerbi.extensibility.VisualTooltipDataItem;
 import {
   textMeasurementService,
@@ -30,8 +32,22 @@ import {
 } from "powerbi-visuals-utils-formattingutils";
 import { dataViewObjects } from "powerbi-visuals-utils-dataviewutils";
 import ILocalizationManager = powerbi.extensibility.ILocalizationManager;
+import PrimitiveValue = powerbi.PrimitiveValue;
+import ISelectionIdBuilder = powerbi.visuals.ISelectionIdBuilder;
+type Selection<T extends d3.BaseType> = d3.Selection<T, any, any, any>;
 
-type Selection<T1 extends BaseType, T2 = any> = d3Selection<T1, T2, any, any>;
+
+interface LineChartDataPoint {
+  value: PrimitiveValue;
+  x: number;
+  y: number;
+  category: string;
+  pointColor: string;
+  lineColor: string;
+  lineWidth: number;
+  selectionId: ISelectionId;
+}
+
 
 export class Visual implements IVisual {
   private target: HTMLElement;
@@ -43,19 +59,38 @@ export class Visual implements IVisual {
   private viewport: powerbi.IViewport;
   private isInitialRender: boolean = false;
   private localizationManager: ILocalizationManager;
+  private selectionManager: ISelectionManager;
+  private selectionIdBuilder: ISelectionIdBuilder;
 
   constructor(options: VisualConstructorOptions) {
     this.host = options.host;
     this.target = options.element;
+    this.selectionManager = options.host.createSelectionManager();
     this.formattingSettingsService = new FormattingSettingsService();
     this.settings = new VisualFormattingSettingsModel();
-    this.tooltipServiceWrapper = createTooltipServiceWrapper(
-      this.host.tooltipService,
-      options.element
-    );
+    this.tooltipServiceWrapper = createTooltipServiceWrapper(this.host.tooltipService, options.element);
     this.localizationManager = this.host.createLocalizationManager();
-  }
+    this.selectionIdBuilder = this.host.createSelectionIdBuilder();
 
+  }
+  public GenerateSelectionId(options: VisualUpdateOptions, host: IVisualHost): void {
+    let dataViews = options.dataViews //options: VisualUpdateOptions
+    let categorical = dataViews[0].categorical;
+    let dataValues = categorical.values;
+
+    for (let dataValue of dataValues) {
+      let values = dataValue.values;
+      for (let i = 0, len = dataValue.values.length; i < len; i++) {
+        let selectionId = host.createSelectionIdBuilder()
+          .withCategory(categorical.categories[0], i)
+          .withMeasure(dataValue.source.queryName)
+          .withSeries(categorical.values, categorical.values[i])
+          .createSelectionId();
+        console.log(selectionId);
+      }
+    }
+
+  }
   /**
    * Updates the state of the visual. Every sequential databinding and resize will call update.
    *
@@ -96,11 +131,19 @@ export class Visual implements IVisual {
     }
     const dataView = options.dataViews[0];
     const categorical = dataView.categorical;
+    this.GenerateSelectionId(options, this.host);
 
+    //create selection id for each data point
+  //   this.selectionManager.select(selector).then((ids: ISelectionId[]) => {
+  //     //called when setting the selection has been completed successfully
+  // });
+    console.log("DataView", dataView);
+    console.log("Categorical", categorical);
     if (!categorical || !categorical.categories || !categorical.values) {
       return;
     }
     const categories = categorical.categories[0].values;
+
     const values = categorical.values[0].values;
     if (!categorical.values[1]) {
       this.viewport = options.viewport;
@@ -162,15 +205,17 @@ export class Visual implements IVisual {
     viewport,
     isInitialRender
   ): void {
-    const width = viewport.width;
-    const height = viewport.height;
+    const width = viewport.width - 30;
+    const height = viewport.height - 30;
     const pointColor = this.settings.dataPointCard.defaultColor.value.value;
     const lineColor = this.settings.dataPointCard.defaultColor.value.value;
     const lineWidth = this.settings.dataPointCard.fontSize.value;
     const isShowPoint = this.settings.speedTransition.showPointWhenLine.value;
     const sizePoint = this.settings.dataPointCard.fontSize.value;
+    const numTicksX = this.settings.showGridlines.numTicksX.value;
+    const numTicksY = this.settings.showGridlines.numTicksY.value;
+    var padding = 40;
 
-    var padding = 50;
     d3.select(this.target).selectAll("*").remove();
 
     const svg = d3
@@ -179,19 +224,16 @@ export class Visual implements IVisual {
       .attr("width", width)
       .attr("height", height);
 
-    console.log(this.getTooltipData(this.data));
-
     const xScale = d3
       .scaleLinear()
       .domain([d3.min(data, (d) => d.x)!, d3.max(data, (d) => d.x)!])
-      .range([50, width - 50]); // Padding 50
+      .range([padding, width - padding]);
 
     const yScale = d3
       .scaleLinear()
       .domain([d3.min(data, (d) => d.y)!, d3.max(data, (d) => d.y)!])
-      .range([height - 50, 50]); // Padding 50
+      .range([height - padding, padding + 10]);
 
-    // console.log("DoneRendeer")
     const lineGenerator = d3
       .line<{ x: number; y: number }>()
       .x((d) => xScale(d.x))
@@ -203,17 +245,18 @@ export class Visual implements IVisual {
     if (speed !== 0) {
       realspeed = realspeed / speed;
     }
-    const xAxis = d3.axisBottom(xScale).ticks(4);
-    const yAxis = d3.axisLeft(yScale).ticks(3);
+    const xAxis = d3.axisBottom(xScale).ticks(numTicksX);
+    const yAxis = d3.axisLeft(yScale).ticks(numTicksY);
 
     const gridX = d3
       .axisBottom(xScale)
+      .ticks(numTicksX)
       .tickSize(-height + 2 * padding)
       .tickFormat(() => "");
 
-    console.log(gridX);
     const gridY = d3
       .axisLeft(yScale)
+      .ticks(numTicksY)
       .tickSize(-width + 2 * padding)
       .tickFormat(() => "");
 
@@ -227,6 +270,7 @@ export class Visual implements IVisual {
         .style("stroke", "#e0e0e0")
         .style("opacity", 1)
         .style("stroke-dasharray", "1,1");
+
 
       svg
         .append("g")
@@ -277,10 +321,6 @@ export class Visual implements IVisual {
         .attr("r", sizePoint)
         .style("fill", pointColor)
         .style("opacity", 1);
-      // .transition()
-      // .duration(1000)
-      // .style("opacity", 1)
-      // .delay((d, i) => i * realspeed);
     }
   }
   //#endregion
@@ -295,6 +335,8 @@ export class Visual implements IVisual {
     const height = viewport.height;
     const pointColor = this.settings.dataPointCard.defaultColor.value.value;
     const sizePoint = this.settings.dataPointCard.fontSize.value;
+    const numTicksX = this.settings.showGridlines.numTicksX.value;
+    const numTicksY = this.settings.showGridlines.numTicksY.value;
     const padding = 50; // Padding
     d3.select(this.target).selectAll("*").remove();
     this.renderButton();
@@ -308,12 +350,12 @@ export class Visual implements IVisual {
     const xScale = d3
       .scaleLinear()
       .domain([d3.min(data, (d) => d.x)!, d3.max(data, (d) => d.x)!])
-      .range([50, width - 50]); // Padding 50
+      .range([padding, width - padding]); // Padding 50
 
     const yScale = d3
       .scaleLinear()
       .domain([d3.min(data, (d) => d.y)!, d3.max(data, (d) => d.y)!])
-      .range([height - 50, 50]); // Padding 50
+      .range([height - padding, padding]); // Padding 50
 
     var realspeed = 100; // ms
     const speed = Number(this.settings.speedTransition.speedShowPoint.value);
@@ -322,18 +364,20 @@ export class Visual implements IVisual {
     }
     var circles = svg.selectAll("circle").data(data);
 
-    const xAxis = d3.axisBottom(xScale).ticks(6);
-    const yAxis = d3.axisLeft(yScale).ticks(3);
+    const xAxis = d3.axisBottom(xScale).ticks(numTicksX);
+    const yAxis = d3.axisLeft(yScale).ticks(numTicksY);
 
     // console.log(xAxis)
     const gridX = d3
       .axisBottom(xScale)
       .tickSize(-height + 2 * padding)
+      .ticks(numTicksX)
       .tickFormat(() => "");
 
     const gridY = d3
       .axisLeft(yScale)
       .tickSize(-width + 2 * padding)
+      .ticks(numTicksY)
       .tickFormat(() => "");
     console.log(gridY);
 
@@ -436,6 +480,7 @@ export class Visual implements IVisual {
   }
   //#endregion
 
+  //#region Tooltip
   public callTooltip(
     svg,
     viewport: powerbi.IViewport,
@@ -493,6 +538,7 @@ export class Visual implements IVisual {
       highlightPoint.style("opacity", 0);
     });
   }
+  //#endregion
   //#region Render Button
   private renderButton(): void {
     const buttonSize = 20;

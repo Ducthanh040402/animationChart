@@ -1,5 +1,5 @@
 {
-    "version": "1.2.0",
+    "version": "1.3.0",
     "author": {"name":"thanh","email":"thanh442002@gmail.com"},
     "resources": [
         {
@@ -8,7 +8,7 @@
             "file": "resources/PlayChart.pbiviz.json"
         }
     ],
-    "visual": {"name":"PlayChart","displayName":"Play Chart","guid":"PlayChart","visualClassName":"Visual","version":"1.2.0","description":"just Test","supportUrl":"https://akselos.com","gitHubUrl":""},
+    "visual": {"name":"PlayChart","displayName":"Play Chart","guid":"PlayChart","visualClassName":"Visual","version":"1.3.0","description":"just Test","supportUrl":"https://akselos.com","gitHubUrl":""},
     "metadata": {
         "pbivizjson": {
             "resourceId": "rId0"

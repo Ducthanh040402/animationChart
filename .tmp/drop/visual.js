@@ -117,13 +117,13 @@ class ShowGrid extends FormattingSettingsCard {
         });
         this.numTicksX = new powerbi_visuals_utils_formattingmodel__WEBPACK_IMPORTED_MODULE_0__/* .formattingSettings.NumUpDown */ .z.iB({
             name: "ticksX",
-            displayName: "Transparency X",
-            value: 0
+            displayName: "Ticks X",
+            value: 4
         });
         this.numTicksY = new powerbi_visuals_utils_formattingmodel__WEBPACK_IMPORTED_MODULE_0__/* .formattingSettings.NumUpDown */ .z.iB({
             name: "ticksY",
-            displayName: "Transparency Y",
-            value: 0
+            displayName: "Ticks Y",
+            value: 3
         });
         this.name = "ishowGrid";
         this.displayName = "Axis and Gridlines";
@@ -170,10 +170,28 @@ class Visual {
         this.isInitialRender = false;
         this.host = options.host;
         this.target = options.element;
+        this.selectionManager = options.host.createSelectionManager();
         this.formattingSettingsService = new powerbi_visuals_utils_formattingmodel__WEBPACK_IMPORTED_MODULE_0__/* .FormattingSettingsService */ .O();
         this.settings = new _settings__WEBPACK_IMPORTED_MODULE_2__/* .VisualFormattingSettingsModel */ .S();
         this.tooltipServiceWrapper = (0,powerbi_visuals_utils_tooltiputils__WEBPACK_IMPORTED_MODULE_3__/* .createTooltipServiceWrapper */ .C)(this.host.tooltipService, options.element);
         this.localizationManager = this.host.createLocalizationManager();
+        this.selectionIdBuilder = this.host.createSelectionIdBuilder();
+    }
+    GenerateSelectionId(options, host) {
+        let dataViews = options.dataViews; //options: VisualUpdateOptions
+        let categorical = dataViews[0].categorical;
+        let dataValues = categorical.values;
+        for (let dataValue of dataValues) {
+            let values = dataValue.values;
+            for (let i = 0, len = dataValue.values.length; i < len; i++) {
+                let selectionId = host.createSelectionIdBuilder()
+                    .withCategory(categorical.categories[0], i)
+                    .withMeasure(dataValue.source.queryName)
+                    .withSeries(categorical.values, categorical.values[i])
+                    .createSelectionId();
+                console.log(selectionId);
+            }
+        }
     }
     /**
      * Updates the state of the visual. Every sequential databinding and resize will call update.
@@ -209,6 +227,9 @@ class Visual {
         }
         const dataView = options.dataViews[0];
         const categorical = dataView.categorical;
+        this.GenerateSelectionId(options, this.host);
+        console.log("DataView", dataView);
+        console.log("Categorical", categorical);
         if (!categorical || !categorical.categories || !categorical.values) {
             return;
         }
@@ -278,27 +299,27 @@ class Visual {
     }
     //#region Render Line
     renderLine(data, viewport, isInitialRender) {
-        const width = viewport.width;
-        const height = viewport.height;
+        const width = viewport.width - 30;
+        const height = viewport.height - 30;
         const pointColor = this.settings.dataPointCard.defaultColor.value.value;
         const lineColor = this.settings.dataPointCard.defaultColor.value.value;
         const lineWidth = this.settings.dataPointCard.fontSize.value;
         const isShowPoint = this.settings.speedTransition.showPointWhenLine.value;
         const sizePoint = this.settings.dataPointCard.fontSize.value;
-        var padding = 50;
+        const numTicksX = this.settings.showGridlines.numTicksX.value;
+        const numTicksY = this.settings.showGridlines.numTicksY.value;
+        var padding = 40;
         d3__WEBPACK_IMPORTED_MODULE_1__/* .select */ .Ltv(this.target).selectAll("*").remove();
         const svg = d3__WEBPACK_IMPORTED_MODULE_1__/* .select */ .Ltv(this.target)
             .append("svg")
             .attr("width", width)
             .attr("height", height);
-        console.log(this.getTooltipData(this.data));
         const xScale = d3__WEBPACK_IMPORTED_MODULE_1__/* .scaleLinear */ .m4Y()
             .domain([d3__WEBPACK_IMPORTED_MODULE_1__/* .min */ .jkA(data, (d) => d.x), d3__WEBPACK_IMPORTED_MODULE_1__/* .max */ .T9B(data, (d) => d.x)])
-            .range([50, width - 50]); // Padding 50
+            .range([padding, width - padding]);
         const yScale = d3__WEBPACK_IMPORTED_MODULE_1__/* .scaleLinear */ .m4Y()
             .domain([d3__WEBPACK_IMPORTED_MODULE_1__/* .min */ .jkA(data, (d) => d.y), d3__WEBPACK_IMPORTED_MODULE_1__/* .max */ .T9B(data, (d) => d.y)])
-            .range([height - 50, 50]); // Padding 50
-        // console.log("DoneRendeer")
+            .range([height - padding, padding + 10]);
         const lineGenerator = d3__WEBPACK_IMPORTED_MODULE_1__/* .line */ .n8j()
             .x((d) => xScale(d.x))
             .y((d) => yScale(d.y))
@@ -308,13 +329,14 @@ class Visual {
         if (speed !== 0) {
             realspeed = realspeed / speed;
         }
-        const xAxis = d3__WEBPACK_IMPORTED_MODULE_1__/* .axisBottom */ .l78(xScale).ticks(4);
-        const yAxis = d3__WEBPACK_IMPORTED_MODULE_1__/* .axisLeft */ .V4s(yScale).ticks(3);
+        const xAxis = d3__WEBPACK_IMPORTED_MODULE_1__/* .axisBottom */ .l78(xScale).ticks(numTicksX);
+        const yAxis = d3__WEBPACK_IMPORTED_MODULE_1__/* .axisLeft */ .V4s(yScale).ticks(numTicksY);
         const gridX = d3__WEBPACK_IMPORTED_MODULE_1__/* .axisBottom */ .l78(xScale)
+            .ticks(numTicksX)
             .tickSize(-height + 2 * padding)
             .tickFormat(() => "");
-        console.log(gridX);
         const gridY = d3__WEBPACK_IMPORTED_MODULE_1__/* .axisLeft */ .V4s(yScale)
+            .ticks(numTicksY)
             .tickSize(-width + 2 * padding)
             .tickFormat(() => "");
         if (this.settings.showGridlines.isShowGrid.value) {
@@ -373,10 +395,6 @@ class Visual {
                 .attr("r", sizePoint)
                 .style("fill", pointColor)
                 .style("opacity", 1);
-            // .transition()
-            // .duration(1000)
-            // .style("opacity", 1)
-            // .delay((d, i) => i * realspeed);
         }
     }
     //#endregion
@@ -386,6 +404,8 @@ class Visual {
         const height = viewport.height;
         const pointColor = this.settings.dataPointCard.defaultColor.value.value;
         const sizePoint = this.settings.dataPointCard.fontSize.value;
+        const numTicksX = this.settings.showGridlines.numTicksX.value;
+        const numTicksY = this.settings.showGridlines.numTicksY.value;
         const padding = 50; // Padding
         d3__WEBPACK_IMPORTED_MODULE_1__/* .select */ .Ltv(this.target).selectAll("*").remove();
         this.renderButton();
@@ -395,24 +415,26 @@ class Visual {
             .attr("height", height);
         const xScale = d3__WEBPACK_IMPORTED_MODULE_1__/* .scaleLinear */ .m4Y()
             .domain([d3__WEBPACK_IMPORTED_MODULE_1__/* .min */ .jkA(data, (d) => d.x), d3__WEBPACK_IMPORTED_MODULE_1__/* .max */ .T9B(data, (d) => d.x)])
-            .range([50, width - 50]); // Padding 50
+            .range([padding, width - padding]); // Padding 50
         const yScale = d3__WEBPACK_IMPORTED_MODULE_1__/* .scaleLinear */ .m4Y()
             .domain([d3__WEBPACK_IMPORTED_MODULE_1__/* .min */ .jkA(data, (d) => d.y), d3__WEBPACK_IMPORTED_MODULE_1__/* .max */ .T9B(data, (d) => d.y)])
-            .range([height - 50, 50]); // Padding 50
+            .range([height - padding, padding]); // Padding 50
         var realspeed = 100; // ms
         const speed = Number(this.settings.speedTransition.speedShowPoint.value);
         if (speed !== 0) {
             realspeed = realspeed / speed;
         }
         var circles = svg.selectAll("circle").data(data);
-        const xAxis = d3__WEBPACK_IMPORTED_MODULE_1__/* .axisBottom */ .l78(xScale).ticks(6);
-        const yAxis = d3__WEBPACK_IMPORTED_MODULE_1__/* .axisLeft */ .V4s(yScale).ticks(3);
+        const xAxis = d3__WEBPACK_IMPORTED_MODULE_1__/* .axisBottom */ .l78(xScale).ticks(numTicksX);
+        const yAxis = d3__WEBPACK_IMPORTED_MODULE_1__/* .axisLeft */ .V4s(yScale).ticks(numTicksY);
         // console.log(xAxis)
         const gridX = d3__WEBPACK_IMPORTED_MODULE_1__/* .axisBottom */ .l78(xScale)
             .tickSize(-height + 2 * padding)
+            .ticks(numTicksX)
             .tickFormat(() => "");
         const gridY = d3__WEBPACK_IMPORTED_MODULE_1__/* .axisLeft */ .V4s(yScale)
             .tickSize(-width + 2 * padding)
+            .ticks(numTicksY)
             .tickFormat(() => "");
         console.log(gridY);
         if (this.settings.showGridlines.isShowGrid.value) {
@@ -502,6 +524,7 @@ class Visual {
         }
     }
     //#endregion
+    //#region Tooltip
     callTooltip(svg, viewport, data, xScale, yScale) {
         const width = viewport.width;
         const height = viewport.height;
@@ -542,6 +565,7 @@ class Visual {
             highlightPoint.style("opacity", 0);
         });
     }
+    //#endregion
     //#region Render Button
     renderButton() {
         const buttonSize = 20;
@@ -4699,7 +4723,7 @@ function creatorFixed(fullname) {
 /* harmony export */   Lt: () => (/* reexport safe */ _select_js__WEBPACK_IMPORTED_MODULE_1__.A),
 /* harmony export */   Wn: () => (/* reexport safe */ _pointer_js__WEBPACK_IMPORTED_MODULE_0__.A)
 /* harmony export */ });
-/* harmony import */ var _pointer_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(970);
+/* harmony import */ var _pointer_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(5970);
 /* harmony import */ var _select_js__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(183);
 
 
@@ -4781,13 +4805,13 @@ var xhtml = "http://www.w3.org/1999/xhtml";
 
 /***/ }),
 
-/***/ 970:
+/***/ 5970:
 /***/ ((__unused_webpack___webpack_module__, __webpack_exports__, __webpack_require__) => {
 
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
 /* harmony export */   A: () => (/* export default binding */ __WEBPACK_DEFAULT_EXPORT__)
 /* harmony export */ });
-/* harmony import */ var _sourceEvent_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(324);
+/* harmony import */ var _sourceEvent_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(2324);
 
 
 /* harmony default export */ function __WEBPACK_DEFAULT_EXPORT__(event, node) {
@@ -6175,7 +6199,7 @@ function empty() {
 
 /***/ }),
 
-/***/ 324:
+/***/ 2324:
 /***/ ((__unused_webpack___webpack_module__, __webpack_exports__, __webpack_require__) => {
 
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {

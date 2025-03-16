@@ -4,6 +4,7 @@ import VisualConstructorOptions = powerbi.extensibility.visual.VisualConstructor
 import VisualUpdateOptions = powerbi.extensibility.visual.VisualUpdateOptions;
 import IVisual = powerbi.extensibility.visual.IVisual;
 import FormattingModel = powerbi.visuals.FormattingModel;
+import IVisualHost = powerbi.extensibility.visual.IVisualHost;
 export declare class Visual implements IVisual {
     private target;
     private settings;
@@ -14,7 +15,10 @@ export declare class Visual implements IVisual {
     private viewport;
     private isInitialRender;
     private localizationManager;
+    private selectionManager;
+    private selectionIdBuilder;
     constructor(options: VisualConstructorOptions);
+    GenerateSelectionId(options: VisualUpdateOptions, host: IVisualHost): void;
     /**
      * Updates the state of the visual. Every sequential databinding and resize will call update.
      *

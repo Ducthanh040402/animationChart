@@ -1,5 +1,9 @@
-export interface dataPointChart {
-    datacol1 : Number,
-    datacol2 : number,
-    
+
+export interface ISelectionId {
+    equals(other: ISelectionId): boolean;
+    includes(other: ISelectionId, ignoreHighlight?: boolean): boolean;
+    getKey(): string;
+    getSelector(): Selector;
+    getSelectorsByColumn(): SelectorsByColumn;
+    hasIdentity(): boolean;
 }
