@@ -324,7 +324,9 @@ export class Visual implements IVisual {
       .attr("stroke-width", lineWidth)
 
       .style("opacity", 1);
+ 
 
+      
     this.callTooltip(svg, viewport, data, xScale, yScale);
     if (isShowPoint) {
       svg
