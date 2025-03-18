@@ -9,13 +9,11 @@
       "displayName": "Y-Value",
       "name": "y-value",
       "kind": "Measure"
-
     },
     {
       "displayName": "Index",
       "name": "index",
       "kind": "Measure"
-
     }
   ],
   "objects": {
@@ -48,7 +46,7 @@
             "numeric": true
           }
         },
-        "sortData":{
+        "sortData": {
           "type": {
             "bool": true
           }
@@ -63,12 +61,12 @@
             "numeric": true
           }
         },
-        "lineorPoint":{
+        "lineorPoint": {
           "type": {
             "bool": true
           }
         },
-        "showPoint":{
+        "showPoint": {
           "type": {
             "bool": true
           }
@@ -88,14 +86,44 @@
             "bool": true
           }
         },
-        "ticksX":{
+        "ticksX": {
           "type": {
             "numeric": true
           }
         },
-        "ticksY":{
+        "ticksY": {
           "type": {
             "numeric": true
+          }
+        }
+      }
+    },
+    "rangeX": {
+      "displayName": "Range X-Axis",
+      "properties": {
+        "minimumrangeX": {
+          "type": {
+            "text": true
+          }
+        },
+        "maximumrangeX": {
+          "type": {
+            "text": true
+          }
+        }
+      }
+    },
+    "rangeY": {
+      "displayName": "Range Y-Axis",
+      "properties": {
+        "minimumrangeY": {
+          "type": {
+            "text": true
+          }
+        },
+        "maximumrangeY": {
+          "type": {
+            "text": true
           }
         }
       }
@@ -109,10 +137,10 @@
             "in": "x-value"
           },
           "dataReductionAlgorithm": {
-                        "window": {
-                            "count": 30000
-                        }
-                    }
+            "window": {
+              "count": 30000
+            }
+          }
         },
         "values": {
           "select": [
@@ -121,20 +149,20 @@
                 "in": "y-value"
               },
               "dataReductionAlgorithm": {
-                        "window": {
-                            "count": 30000
-                        }
-                    }
+                "window": {
+                  "count": 30000
+                }
+              }
             },
             {
               "for": {
                 "in": "index"
               },
               "dataReductionAlgorithm": {
-                        "window": {
-                            "count": 30000
-                        }
-                    }
+                "window": {
+                  "count": 30000
+                }
+              }
             }
           ]
         }

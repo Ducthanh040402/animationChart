@@ -89,22 +89,36 @@ export class Visual implements IVisual {
         console.log(selectionId);
       }
     }
-
   }
-  /**
-   * Updates the state of the visual. Every sequential databinding and resize will call update.
-   *
-   * @function
-   * @param {VisualUpdateOptions} options - Contains references to the size of the container
-   *                                        and the dataView which contains all the data
-   *                                        the visual had queried.
-   */
+  public updateRangeXY(settings: VisualFormattingSettingsModel, data: Array<{ x: number; y: number }>) {
+    const minimumrangeX = settings.rangeX.minimumrangeX.value;
+    const maximumrangeX = settings.rangeX.maximumrangeX.value;
+    const minimumrangeY = settings.rangeY.minimumrangeY.value;
+    const maximumrangeY = settings.rangeY.maximumrangeY.value;
+    var rangeX = [d3.min(data, (d) => d.x)!, d3.max(data, (d) => d.x)!]
+    var rangeY = [d3.min(data, (d) => d.y)!, d3.max(data, (d) => d.y)!]
+
+    if (minimumrangeX === "" && maximumrangeX === "" && minimumrangeY === "" && maximumrangeY === "") {
+      return { rangeX, rangeY }
+    }
+    if (minimumrangeX !== "") {
+      rangeX[0] = Number(minimumrangeX);
+    }
+    if (maximumrangeX !== "") {
+      rangeX[1] = Number(maximumrangeX);
+    }
+    if (minimumrangeY !== "") {
+      rangeY[0] = Number(minimumrangeY);
+    }
+    if (maximumrangeY !== "") {
+      rangeY[1] = Number(maximumrangeY);
+    }
+    return { rangeX, rangeY }
+  }
 
   //#region Tooltip data
   private getTooltipData(value: any): VisualTooltipDataItem[] {
     console.log(value);
-    // const formattedValue = valueFormatter.format(value.value, value.format);
-    // const language = this.localizationManager.getDisplayName("LanguageKey");
     const displayName = value.x;
     const valueDisplace = value.y;
     return [
@@ -116,7 +130,6 @@ export class Visual implements IVisual {
       },
     ];
   }
-
   //#endregion
 
   //#region Update function
@@ -134,9 +147,9 @@ export class Visual implements IVisual {
     this.GenerateSelectionId(options, this.host);
 
     //create selection id for each data point
-  //   this.selectionManager.select(selector).then((ids: ISelectionId[]) => {
-  //     //called when setting the selection has been completed successfully
-  // });
+    //   this.selectionManager.select(selector).then((ids: ISelectionId[]) => {
+    //     //called when setting the selection has been completed successfully
+    // });
     console.log("DataView", dataView);
     console.log("Categorical", categorical);
     if (!categorical || !categorical.categories || !categorical.values) {
@@ -205,8 +218,8 @@ export class Visual implements IVisual {
     viewport,
     isInitialRender
   ): void {
-    const width = viewport.width - 30;
-    const height = viewport.height - 30;
+    const width = viewport.width;
+    const height = viewport.height;
     const pointColor = this.settings.dataPointCard.defaultColor.value.value;
     const lineColor = this.settings.dataPointCard.defaultColor.value.value;
     const lineWidth = this.settings.dataPointCard.fontSize.value;
@@ -214,24 +227,32 @@ export class Visual implements IVisual {
     const sizePoint = this.settings.dataPointCard.fontSize.value;
     const numTicksX = this.settings.showGridlines.numTicksX.value;
     const numTicksY = this.settings.showGridlines.numTicksY.value;
+    const minimumrangeX = this.settings.rangeX.minimumrangeX.value;
+    const maximumrangeX = this.settings.rangeX.maximumrangeX.value;
+    const minimumrangeY = this.settings.rangeY.minimumrangeY.value;
+    const maximumrangeY = this.settings.rangeY.maximumrangeY.value;
     var padding = 40;
 
-    d3.select(this.target).selectAll("*").remove();
+    const margin = { top: 0, right: 0, bottom: 0, left: 0 };
+    const innerWidth = width - margin.left - margin.right;
+    const innerHeight = height - margin.top - margin.bottom;
 
+    d3.select(this.target).selectAll("*").remove();
+    var { rangeX, rangeY } = this.updateRangeXY(this.settings, data)
+    const formatNumber = d3.format(".0f");
     const svg = d3
       .select(this.target)
       .append("svg")
       .attr("width", width)
       .attr("height", height);
-
     const xScale = d3
       .scaleLinear()
-      .domain([d3.min(data, (d) => d.x)!, d3.max(data, (d) => d.x)!])
-      .range([padding, width - padding]);
+      .domain(rangeX)
+      .range([padding+10, width - 10]);
 
     const yScale = d3
       .scaleLinear()
-      .domain([d3.min(data, (d) => d.y)!, d3.max(data, (d) => d.y)!])
+      .domain(rangeY)
       .range([height - padding, padding + 10]);
 
     const lineGenerator = d3
@@ -240,13 +261,8 @@ export class Visual implements IVisual {
       .y((d) => yScale(d.y))
       .curve(d3.curveLinear);
 
-    var realspeed = 100; // ms
-    const speed = Number(this.settings.speedTransition.speedShowPoint.value);
-    if (speed !== 0) {
-      realspeed = realspeed / speed;
-    }
-    const xAxis = d3.axisBottom(xScale).ticks(numTicksX);
-    const yAxis = d3.axisLeft(yScale).ticks(numTicksY);
+    const xAxis = d3.axisBottom(xScale).ticks(numTicksX).tickFormat(formatNumber);
+    const yAxis = d3.axisLeft(yScale).ticks(numTicksY).tickFormat(formatNumber);
 
     const gridX = d3
       .axisBottom(xScale)
@@ -257,32 +273,30 @@ export class Visual implements IVisual {
     const gridY = d3
       .axisLeft(yScale)
       .ticks(numTicksY)
-      .tickSize(-width + 2 * padding)
+      .tickSize(-width + 2 * 10)
       .tickFormat(() => "");
 
     if (this.settings.showGridlines.isShowGrid.value) {
       svg
         .append("g")
-        .attr("class", "grid")
+        .attr("class", "x-grid")
         .attr("transform", `translate(0, ${height - padding})`)
         .call(gridX)
         .selectAll("path, line")
-        .style("stroke", "#e0e0e0")
-        .style("opacity", 1)
-        .style("stroke-dasharray", "1,1");
-
-
+        .style("stroke", "grey")
+        .style("opacity", 0.5)
+        .style("stroke-dasharray", "1 4");
       svg
         .append("g")
-        .attr("class", "grid")
+        .attr("class", "y-grid")
         .attr("transform", `translate(${padding}, 0)`)
         .call(gridY)
         .selectAll("path, line")
-        .style("stroke", "#e0e0e0")
-        .style("opacity", 1)
-        .style("stroke-dasharray", "1,1");
+        .style("stroke", "grey")
+        .style("opacity", 0.5)
+        .style("stroke-dasharray", "1 4");
     }
-
+    svg.selectAll(".y-grid path, .x-grid path").style("stroke", "none");
     if (this.settings.showGridlines.isShowAxis.value) {
       svg
         .append("g")
@@ -290,6 +304,7 @@ export class Visual implements IVisual {
         .attr("transform", `translate(0, ${height - padding})`)
         .call(xAxis)
         .selectAll("path, line")
+
         .remove();
       svg
         .append("g")
@@ -298,15 +313,16 @@ export class Visual implements IVisual {
         .call(yAxis)
         .selectAll("path, line")
         .remove();
-    }
-
+    }  
     svg
       .append("path")
       .datum(data)
+      .attr("class", "line")
       .attr("d", lineGenerator)
       .attr("fill", "none")
       .attr("stroke", lineColor)
       .attr("stroke-width", lineWidth)
+
       .style("opacity", 1);
 
     this.callTooltip(svg, viewport, data, xScale, yScale);
@@ -340,7 +356,7 @@ export class Visual implements IVisual {
     const padding = 50; // Padding
     d3.select(this.target).selectAll("*").remove();
     this.renderButton();
-
+    var {rangeX,rangeY}=this.updateRangeXY(this.settings,data);
     const svg = d3
       .select(this.target)
       .append("svg")
@@ -349,12 +365,12 @@ export class Visual implements IVisual {
 
     const xScale = d3
       .scaleLinear()
-      .domain([d3.min(data, (d) => d.x)!, d3.max(data, (d) => d.x)!])
+      .domain(rangeX)
       .range([padding, width - padding]); // Padding 50
 
     const yScale = d3
       .scaleLinear()
-      .domain([d3.min(data, (d) => d.y)!, d3.max(data, (d) => d.y)!])
+      .domain(rangeY)
       .range([height - padding, padding]); // Padding 50
 
     var realspeed = 100; // ms
@@ -384,7 +400,7 @@ export class Visual implements IVisual {
     if (this.settings.showGridlines.isShowGrid.value) {
       svg
         .append("g")
-        .attr("class", "grid")
+        .attr("class", "x-grid")
         .attr("transform", `translate(0, ${height - padding})`)
         .call(gridX)
         .selectAll("path, line")
@@ -394,13 +410,15 @@ export class Visual implements IVisual {
 
       svg
         .append("g")
-        .attr("class", "grid")
+        .attr("class", "y-grid")
         .attr("transform", `translate(${padding}, 0)`)
         .call(gridY)
         .selectAll("path, line")
         .style("stroke", "#e0e0e0")
         .style("opacity", 1)
         .style("stroke-dasharray", "1,1");
+    svg.selectAll(".y-grid path, .x-grid path").style("stroke", "none");
+
     }
     if (this.settings.showGridlines.isShowAxis.value) {
       svg
@@ -494,8 +512,8 @@ export class Visual implements IVisual {
     const verticalLine = svg
       .append("line")
       .attr("class", "vertical-line")
-      .attr("y1", 50) // Padding top
-      .attr("y2", height - 50) // Padding bottom
+      .attr("y1", 40)
+      .attr("y2", height - 40)
       .attr("stroke", "#000000")
       .attr("stroke-width", 1)
       .style("opacity", 0);
@@ -503,9 +521,8 @@ export class Visual implements IVisual {
     const highlightPoint = svg
       .append("circle")
       .attr("class", "highlight-point")
-      .attr("r", 5) // Kích thước điểm
-      .attr("fill", this.settings.dataPointCard.defaultColor.value.value) // Màu đỏ
-
+      .attr("r", 5)
+      .attr("fill", this.settings.dataPointCard.defaultColor.value.value)
       .attr("stroke-width", 2)
       .style("opacity", 0);
     //mousemove event
@@ -519,8 +536,6 @@ export class Visual implements IVisual {
           : prev
       );
 
-      console.log(this.getTooltipData(closestPoint));
-
       this.tooltipServiceWrapper.addTooltip<TooltipEnabledDataPoint>(svg, () =>
         this.getTooltipData(closestPoint)
       );
@@ -531,7 +546,6 @@ export class Visual implements IVisual {
       highlightPoint.attr("cx", cx).attr("cy", cy).style("opacity", 1);
     });
 
-    // Ẩn tooltip khi rời khỏi svg
     svg.on("mouseleave", () => {
       this.tooltipServiceWrapper.hide();
       verticalLine.style("opacity", 0);

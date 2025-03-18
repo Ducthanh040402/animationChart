@@ -36,6 +36,9 @@ import ToggleSwitch = formattingSettings.ToggleSwitch;
 import Model = formattingSettings.Model;
 import TextInput = formattingSettings.TextInput;
 import FontControl = formattingSettings.FontControl;
+import { autoType } from "d3";
+import { AutoFlagsSelection } from "powerbi-visuals-utils-formattingmodel/lib/FormattingSettingsComponents";
+
 
 
 /**
@@ -122,6 +125,7 @@ class ShowGrid extends FormattingSettingsCard {
         displayName: "Ticks Y",
         value: 3
     });
+
     name: string = "ishowGrid";
     displayName: string = "Axis and Gridlines";
     slices: Array<FormattingSettingsSlice> = [
@@ -132,13 +136,53 @@ class ShowGrid extends FormattingSettingsCard {
     ];
 }
 
+class XRange extends FormattingSettingsCard {
+    name: string = "rangeX"; // same as capabilities object name
+    displayName: string = "Range X-Axis";
+
+    public minimumrangeX: formattingSettings.TextInput = new formattingSettings.TextInput({
+        name: "minimumrangeX", // same as capabilities property name
+        displayName: "Minimum",
+        value: "",
+        placeholder: "Auto"
+    });
+    public maximumrangeX: formattingSettings.TextInput = new formattingSettings.TextInput({
+        name: "maximumrangeX", // same as capabilities property name
+        displayName: "Maximum",
+        value: "",
+        placeholder: "Auto"
+    });
+    public slices: formattingSettings.Slice[] = [ this.minimumrangeX,this.maximumrangeX ];
+}
+class YRange extends FormattingSettingsCard {
+    name: string = "rangeY"; // same as capabilities object name
+    displayName: string = "Range Y-Axis";
+
+    public minimumrangeY: formattingSettings.TextInput = new formattingSettings.TextInput({
+        name: "minimumrangeY", // same as capabilities property name
+        displayName: "Minimum",
+        value: "",
+        placeholder: "Auto"
+    });
+    public maximumrangeY: formattingSettings.TextInput = new formattingSettings.TextInput({
+        name: "maximumrangeY", // same as capabilities property name
+        displayName: "Maximum",
+        value: "",
+        placeholder: "Auto"
+    });
+    public slices: formattingSettings.Slice[] = [ this.minimumrangeY,this.maximumrangeY ];
+}
 export class VisualFormattingSettingsModel extends FormattingSettingsModel {
     dataPointCard = new DataPointCardSettings();
     speedTransition = new SpeedTransition()
     showGridlines = new ShowGrid()
+    rangeX= new XRange()
+    rangeY= new YRange()
     cards = [this.dataPointCard,
     this.speedTransition,
-    this.showGridlines
+    this.showGridlines,
+    this.rangeX,
+    this.rangeY
     ];
 
 

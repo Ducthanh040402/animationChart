@@ -31,10 +31,26 @@ declare class ShowGrid extends FormattingSettingsCard {
     displayName: string;
     slices: Array<FormattingSettingsSlice>;
 }
+declare class XRange extends FormattingSettingsCard {
+    name: string;
+    displayName: string;
+    minimumrangeX: formattingSettings.TextInput;
+    maximumrangeX: formattingSettings.TextInput;
+    slices: formattingSettings.Slice[];
+}
+declare class YRange extends FormattingSettingsCard {
+    name: string;
+    displayName: string;
+    minimumrangeY: formattingSettings.TextInput;
+    maximumrangeY: formattingSettings.TextInput;
+    slices: formattingSettings.Slice[];
+}
 export declare class VisualFormattingSettingsModel extends FormattingSettingsModel {
     dataPointCard: DataPointCardSettings;
     speedTransition: SpeedTransition;
     showGridlines: ShowGrid;
-    cards: (DataPointCardSettings | SpeedTransition | ShowGrid)[];
+    rangeX: XRange;
+    rangeY: YRange;
+    cards: (XRange | YRange | DataPointCardSettings | SpeedTransition | ShowGrid)[];
 }
 export {};

@@ -3,6 +3,7 @@ import { ScaleLinear } from "d3-scale";
 import VisualConstructorOptions = powerbi.extensibility.visual.VisualConstructorOptions;
 import VisualUpdateOptions = powerbi.extensibility.visual.VisualUpdateOptions;
 import IVisual = powerbi.extensibility.visual.IVisual;
+import { VisualFormattingSettingsModel } from "./settings";
 import FormattingModel = powerbi.visuals.FormattingModel;
 import IVisualHost = powerbi.extensibility.visual.IVisualHost;
 export declare class Visual implements IVisual {
@@ -19,14 +20,13 @@ export declare class Visual implements IVisual {
     private selectionIdBuilder;
     constructor(options: VisualConstructorOptions);
     GenerateSelectionId(options: VisualUpdateOptions, host: IVisualHost): void;
-    /**
-     * Updates the state of the visual. Every sequential databinding and resize will call update.
-     *
-     * @function
-     * @param {VisualUpdateOptions} options - Contains references to the size of the container
-     *                                        and the dataView which contains all the data
-     *                                        the visual had queried.
-     */
+    updateRangeXY(settings: VisualFormattingSettingsModel, data: Array<{
+        x: number;
+        y: number;
+    }>): {
+        rangeX: number[];
+        rangeY: number[];
+    };
     private getTooltipData;
     update(options: VisualUpdateOptions): void;
     private startAnimation;

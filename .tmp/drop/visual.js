@@ -3,7 +3,7 @@ var PlayChart_DEBUG;
 /******/ 	"use strict";
 /******/ 	var __webpack_modules__ = ({
 
-/***/ 802:
+/***/ 7028:
 /***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
 
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
@@ -135,15 +135,59 @@ class ShowGrid extends FormattingSettingsCard {
         ];
     }
 }
+class XRange extends FormattingSettingsCard {
+    constructor() {
+        super(...arguments);
+        this.name = "rangeX"; // same as capabilities object name
+        this.displayName = "Range X-Axis";
+        this.minimumrangeX = new powerbi_visuals_utils_formattingmodel__WEBPACK_IMPORTED_MODULE_0__/* .formattingSettings.TextInput */ .z.ks({
+            name: "minimumrangeX",
+            displayName: "Minimum",
+            value: "",
+            placeholder: "Auto"
+        });
+        this.maximumrangeX = new powerbi_visuals_utils_formattingmodel__WEBPACK_IMPORTED_MODULE_0__/* .formattingSettings.TextInput */ .z.ks({
+            name: "maximumrangeX",
+            displayName: "Maximum",
+            value: "",
+            placeholder: "Auto"
+        });
+        this.slices = [this.minimumrangeX, this.maximumrangeX];
+    }
+}
+class YRange extends FormattingSettingsCard {
+    constructor() {
+        super(...arguments);
+        this.name = "rangeY"; // same as capabilities object name
+        this.displayName = "Range Y-Axis";
+        this.minimumrangeY = new powerbi_visuals_utils_formattingmodel__WEBPACK_IMPORTED_MODULE_0__/* .formattingSettings.TextInput */ .z.ks({
+            name: "minimumrangeY",
+            displayName: "Minimum",
+            value: "",
+            placeholder: "Auto"
+        });
+        this.maximumrangeY = new powerbi_visuals_utils_formattingmodel__WEBPACK_IMPORTED_MODULE_0__/* .formattingSettings.TextInput */ .z.ks({
+            name: "maximumrangeY",
+            displayName: "Maximum",
+            value: "",
+            placeholder: "Auto"
+        });
+        this.slices = [this.minimumrangeY, this.maximumrangeY];
+    }
+}
 class VisualFormattingSettingsModel extends FormattingSettingsModel {
     constructor() {
         super(...arguments);
         this.dataPointCard = new DataPointCardSettings();
         this.speedTransition = new SpeedTransition();
         this.showGridlines = new ShowGrid();
+        this.rangeX = new XRange();
+        this.rangeY = new YRange();
         this.cards = [this.dataPointCard,
             this.speedTransition,
-            this.showGridlines
+            this.showGridlines,
+            this.rangeX,
+            this.rangeY
         ];
     }
 }
@@ -151,7 +195,7 @@ class VisualFormattingSettingsModel extends FormattingSettingsModel {
 
 /***/ }),
 
-/***/ 843:
+/***/ 8205:
 /***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
 
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
@@ -159,7 +203,7 @@ class VisualFormattingSettingsModel extends FormattingSettingsModel {
 /* harmony export */ });
 /* harmony import */ var powerbi_visuals_utils_formattingmodel__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(7674);
 /* harmony import */ var d3__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(756);
-/* harmony import */ var _settings__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(802);
+/* harmony import */ var _settings__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(7028);
 /* harmony import */ var powerbi_visuals_utils_tooltiputils__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(6455);
 
 
@@ -193,19 +237,33 @@ class Visual {
             }
         }
     }
-    /**
-     * Updates the state of the visual. Every sequential databinding and resize will call update.
-     *
-     * @function
-     * @param {VisualUpdateOptions} options - Contains references to the size of the container
-     *                                        and the dataView which contains all the data
-     *                                        the visual had queried.
-     */
+    updateRangeXY(settings, data) {
+        const minimumrangeX = settings.rangeX.minimumrangeX.value;
+        const maximumrangeX = settings.rangeX.maximumrangeX.value;
+        const minimumrangeY = settings.rangeY.minimumrangeY.value;
+        const maximumrangeY = settings.rangeY.maximumrangeY.value;
+        var rangeX = [d3__WEBPACK_IMPORTED_MODULE_1__/* .min */ .jkA(data, (d) => d.x), d3__WEBPACK_IMPORTED_MODULE_1__/* .max */ .T9B(data, (d) => d.x)];
+        var rangeY = [d3__WEBPACK_IMPORTED_MODULE_1__/* .min */ .jkA(data, (d) => d.y), d3__WEBPACK_IMPORTED_MODULE_1__/* .max */ .T9B(data, (d) => d.y)];
+        if (minimumrangeX === "" && maximumrangeX === "" && minimumrangeY === "" && maximumrangeY === "") {
+            return { rangeX, rangeY };
+        }
+        if (minimumrangeX !== "") {
+            rangeX[0] = Number(minimumrangeX);
+        }
+        if (maximumrangeX !== "") {
+            rangeX[1] = Number(maximumrangeX);
+        }
+        if (minimumrangeY !== "") {
+            rangeY[0] = Number(minimumrangeY);
+        }
+        if (maximumrangeY !== "") {
+            rangeY[1] = Number(maximumrangeY);
+        }
+        return { rangeX, rangeY };
+    }
     //#region Tooltip data
     getTooltipData(value) {
         console.log(value);
-        // const formattedValue = valueFormatter.format(value.value, value.format);
-        // const language = this.localizationManager.getDisplayName("LanguageKey");
         const displayName = value.x;
         const valueDisplace = value.y;
         return [
@@ -228,6 +286,10 @@ class Visual {
         const dataView = options.dataViews[0];
         const categorical = dataView.categorical;
         this.GenerateSelectionId(options, this.host);
+        //create selection id for each data point
+        //   this.selectionManager.select(selector).then((ids: ISelectionId[]) => {
+        //     //called when setting the selection has been completed successfully
+        // });
         console.log("DataView", dataView);
         console.log("Categorical", categorical);
         if (!categorical || !categorical.categories || !categorical.values) {
@@ -299,8 +361,8 @@ class Visual {
     }
     //#region Render Line
     renderLine(data, viewport, isInitialRender) {
-        const width = viewport.width - 30;
-        const height = viewport.height - 30;
+        const width = viewport.width;
+        const height = viewport.height;
         const pointColor = this.settings.dataPointCard.defaultColor.value.value;
         const lineColor = this.settings.dataPointCard.defaultColor.value.value;
         const lineWidth = this.settings.dataPointCard.fontSize.value;
@@ -308,57 +370,62 @@ class Visual {
         const sizePoint = this.settings.dataPointCard.fontSize.value;
         const numTicksX = this.settings.showGridlines.numTicksX.value;
         const numTicksY = this.settings.showGridlines.numTicksY.value;
+        const minimumrangeX = this.settings.rangeX.minimumrangeX.value;
+        const maximumrangeX = this.settings.rangeX.maximumrangeX.value;
+        const minimumrangeY = this.settings.rangeY.minimumrangeY.value;
+        const maximumrangeY = this.settings.rangeY.maximumrangeY.value;
         var padding = 40;
+        const margin = { top: 0, right: 0, bottom: 0, left: 0 };
+        const innerWidth = width - margin.left - margin.right;
+        const innerHeight = height - margin.top - margin.bottom;
         d3__WEBPACK_IMPORTED_MODULE_1__/* .select */ .Ltv(this.target).selectAll("*").remove();
+        var { rangeX, rangeY } = this.updateRangeXY(this.settings, data);
+        const formatNumber = d3__WEBPACK_IMPORTED_MODULE_1__/* .format */ .GPZ(".0f");
         const svg = d3__WEBPACK_IMPORTED_MODULE_1__/* .select */ .Ltv(this.target)
             .append("svg")
             .attr("width", width)
             .attr("height", height);
         const xScale = d3__WEBPACK_IMPORTED_MODULE_1__/* .scaleLinear */ .m4Y()
-            .domain([d3__WEBPACK_IMPORTED_MODULE_1__/* .min */ .jkA(data, (d) => d.x), d3__WEBPACK_IMPORTED_MODULE_1__/* .max */ .T9B(data, (d) => d.x)])
-            .range([padding, width - padding]);
+            .domain(rangeX)
+            .range([padding + 10, width - 10]);
         const yScale = d3__WEBPACK_IMPORTED_MODULE_1__/* .scaleLinear */ .m4Y()
-            .domain([d3__WEBPACK_IMPORTED_MODULE_1__/* .min */ .jkA(data, (d) => d.y), d3__WEBPACK_IMPORTED_MODULE_1__/* .max */ .T9B(data, (d) => d.y)])
+            .domain(rangeY)
             .range([height - padding, padding + 10]);
         const lineGenerator = d3__WEBPACK_IMPORTED_MODULE_1__/* .line */ .n8j()
             .x((d) => xScale(d.x))
             .y((d) => yScale(d.y))
             .curve(d3__WEBPACK_IMPORTED_MODULE_1__/* .curveLinear */ .lUB);
-        var realspeed = 100; // ms
-        const speed = Number(this.settings.speedTransition.speedShowPoint.value);
-        if (speed !== 0) {
-            realspeed = realspeed / speed;
-        }
-        const xAxis = d3__WEBPACK_IMPORTED_MODULE_1__/* .axisBottom */ .l78(xScale).ticks(numTicksX);
-        const yAxis = d3__WEBPACK_IMPORTED_MODULE_1__/* .axisLeft */ .V4s(yScale).ticks(numTicksY);
+        const xAxis = d3__WEBPACK_IMPORTED_MODULE_1__/* .axisBottom */ .l78(xScale).ticks(numTicksX).tickFormat(formatNumber);
+        const yAxis = d3__WEBPACK_IMPORTED_MODULE_1__/* .axisLeft */ .V4s(yScale).ticks(numTicksY).tickFormat(formatNumber);
         const gridX = d3__WEBPACK_IMPORTED_MODULE_1__/* .axisBottom */ .l78(xScale)
             .ticks(numTicksX)
             .tickSize(-height + 2 * padding)
             .tickFormat(() => "");
         const gridY = d3__WEBPACK_IMPORTED_MODULE_1__/* .axisLeft */ .V4s(yScale)
             .ticks(numTicksY)
-            .tickSize(-width + 2 * padding)
+            .tickSize(-width + 2 * 10)
             .tickFormat(() => "");
         if (this.settings.showGridlines.isShowGrid.value) {
             svg
                 .append("g")
-                .attr("class", "grid")
+                .attr("class", "x-grid")
                 .attr("transform", `translate(0, ${height - padding})`)
                 .call(gridX)
                 .selectAll("path, line")
-                .style("stroke", "#e0e0e0")
-                .style("opacity", 1)
-                .style("stroke-dasharray", "1,1");
+                .style("stroke", "grey")
+                .style("opacity", 0.5)
+                .style("stroke-dasharray", "1 4");
             svg
                 .append("g")
-                .attr("class", "grid")
+                .attr("class", "y-grid")
                 .attr("transform", `translate(${padding}, 0)`)
                 .call(gridY)
                 .selectAll("path, line")
-                .style("stroke", "#e0e0e0")
-                .style("opacity", 1)
-                .style("stroke-dasharray", "1,1");
+                .style("stroke", "grey")
+                .style("opacity", 0.5)
+                .style("stroke-dasharray", "1 4");
         }
+        svg.selectAll(".y-grid path, .x-grid path").style("stroke", "none");
         if (this.settings.showGridlines.isShowAxis.value) {
             svg
                 .append("g")
@@ -378,6 +445,7 @@ class Visual {
         svg
             .append("path")
             .datum(data)
+            .attr("class", "line")
             .attr("d", lineGenerator)
             .attr("fill", "none")
             .attr("stroke", lineColor)
@@ -409,15 +477,16 @@ class Visual {
         const padding = 50; // Padding
         d3__WEBPACK_IMPORTED_MODULE_1__/* .select */ .Ltv(this.target).selectAll("*").remove();
         this.renderButton();
+        var { rangeX, rangeY } = this.updateRangeXY(this.settings, data);
         const svg = d3__WEBPACK_IMPORTED_MODULE_1__/* .select */ .Ltv(this.target)
             .append("svg")
             .attr("width", width)
             .attr("height", height);
         const xScale = d3__WEBPACK_IMPORTED_MODULE_1__/* .scaleLinear */ .m4Y()
-            .domain([d3__WEBPACK_IMPORTED_MODULE_1__/* .min */ .jkA(data, (d) => d.x), d3__WEBPACK_IMPORTED_MODULE_1__/* .max */ .T9B(data, (d) => d.x)])
+            .domain(rangeX)
             .range([padding, width - padding]); // Padding 50
         const yScale = d3__WEBPACK_IMPORTED_MODULE_1__/* .scaleLinear */ .m4Y()
-            .domain([d3__WEBPACK_IMPORTED_MODULE_1__/* .min */ .jkA(data, (d) => d.y), d3__WEBPACK_IMPORTED_MODULE_1__/* .max */ .T9B(data, (d) => d.y)])
+            .domain(rangeY)
             .range([height - padding, padding]); // Padding 50
         var realspeed = 100; // ms
         const speed = Number(this.settings.speedTransition.speedShowPoint.value);
@@ -440,7 +509,7 @@ class Visual {
         if (this.settings.showGridlines.isShowGrid.value) {
             svg
                 .append("g")
-                .attr("class", "grid")
+                .attr("class", "x-grid")
                 .attr("transform", `translate(0, ${height - padding})`)
                 .call(gridX)
                 .selectAll("path, line")
@@ -449,13 +518,14 @@ class Visual {
                 .style("stroke-dasharray", "1,1");
             svg
                 .append("g")
-                .attr("class", "grid")
+                .attr("class", "y-grid")
                 .attr("transform", `translate(${padding}, 0)`)
                 .call(gridY)
                 .selectAll("path, line")
                 .style("stroke", "#e0e0e0")
                 .style("opacity", 1)
                 .style("stroke-dasharray", "1,1");
+            svg.selectAll(".y-grid path, .x-grid path").style("stroke", "none");
         }
         if (this.settings.showGridlines.isShowAxis.value) {
             svg
@@ -532,16 +602,16 @@ class Visual {
         const verticalLine = svg
             .append("line")
             .attr("class", "vertical-line")
-            .attr("y1", 50) // Padding top
-            .attr("y2", height - 50) // Padding bottom
+            .attr("y1", 40)
+            .attr("y2", height - 40)
             .attr("stroke", "#000000")
             .attr("stroke-width", 1)
             .style("opacity", 0);
         const highlightPoint = svg
             .append("circle")
             .attr("class", "highlight-point")
-            .attr("r", 5) // Kích thước điểm
-            .attr("fill", this.settings.dataPointCard.defaultColor.value.value) // Màu đỏ
+            .attr("r", 5)
+            .attr("fill", this.settings.dataPointCard.defaultColor.value.value)
             .attr("stroke-width", 2)
             .style("opacity", 0);
         //mousemove event
@@ -551,14 +621,12 @@ class Visual {
             const closestPoint = data.reduce((prev, curr) => Math.abs(curr.x - invertedX) < Math.abs(prev.x - invertedX)
                 ? curr
                 : prev);
-            console.log(this.getTooltipData(closestPoint));
             this.tooltipServiceWrapper.addTooltip(svg, () => this.getTooltipData(closestPoint));
             const cx = xScale(closestPoint.x);
             const cy = yScale(closestPoint.y);
             verticalLine.attr("x1", cx).attr("x2", cx).style("opacity", 1);
             highlightPoint.attr("cx", cx).attr("cy", cy).style("opacity", 1);
         });
-        // Ẩn tooltip khi rời khỏi svg
         svg.on("mouseleave", () => {
             this.tooltipServiceWrapper.hide();
             verticalLine.style("opacity", 0);
@@ -612,9 +680,10 @@ class Visual {
 /* harmony export */   Zp: () => (/* binding */ Card),
 /* harmony export */   iB: () => (/* binding */ NumUpDown),
 /* harmony export */   jF: () => (/* binding */ ToggleSwitch),
+/* harmony export */   ks: () => (/* binding */ TextInput),
 /* harmony export */   sk: () => (/* binding */ ColorPicker)
 /* harmony export */ });
-/* unused harmony exports SimpleSlice, AlignmentGroup, Slider, DatePicker, ItemDropdown, AutoDropdown, DurationPicker, ErrorRangeControl, FieldPicker, ItemFlagsSelection, AutoFlagsSelection, TextInput, TextArea, FontPicker, GradientBar, ImageUpload, ListEditor, ReadOnlyText, ShapeMapSelector, CompositeSlice, FontControl, MarginPadding, Container, ContainerItem */
+/* unused harmony exports SimpleSlice, AlignmentGroup, Slider, DatePicker, ItemDropdown, AutoDropdown, DurationPicker, ErrorRangeControl, FieldPicker, ItemFlagsSelection, AutoFlagsSelection, TextArea, FontPicker, GradientBar, ImageUpload, ListEditor, ReadOnlyText, ShapeMapSelector, CompositeSlice, FontControl, MarginPadding, Container, ContainerItem */
 /* harmony import */ var _utils_FormattingSettingsUtils__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(8639);
 /**
  * Powerbi utils components classes for custom visual formatting pane objects
@@ -3303,6 +3372,23 @@ FormatSpecifier.prototype.toString = function() {
 /* harmony default export */ function __WEBPACK_DEFAULT_EXPORT__(x) {
   return x;
 }
+
+
+/***/ }),
+
+/***/ 4710:
+/***/ ((__unused_webpack___webpack_module__, __webpack_exports__, __webpack_require__) => {
+
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   GP: () => (/* reexport safe */ _defaultLocale_js__WEBPACK_IMPORTED_MODULE_0__.GP)
+/* harmony export */ });
+/* harmony import */ var _defaultLocale_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(8701);
+
+
+
+
+
+
 
 
 /***/ }),
@@ -8450,24 +8536,26 @@ function defaultConstrain(transform, extent, translateExtent) {
 /***/ ((__unused_webpack___webpack_module__, __webpack_exports__, __webpack_require__) => {
 
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
-/* harmony export */   Ltv: () => (/* reexport safe */ d3_selection__WEBPACK_IMPORTED_MODULE_4__.Lt),
+/* harmony export */   GPZ: () => (/* reexport safe */ d3_format__WEBPACK_IMPORTED_MODULE_3__.GP),
+/* harmony export */   Ltv: () => (/* reexport safe */ d3_selection__WEBPACK_IMPORTED_MODULE_5__.Lt),
 /* harmony export */   T9B: () => (/* reexport safe */ d3_array__WEBPACK_IMPORTED_MODULE_0__.T9),
 /* harmony export */   V4s: () => (/* reexport safe */ d3_axis__WEBPACK_IMPORTED_MODULE_1__.V4),
-/* harmony export */   WnM: () => (/* reexport safe */ d3_selection__WEBPACK_IMPORTED_MODULE_4__.Wn),
+/* harmony export */   WnM: () => (/* reexport safe */ d3_selection__WEBPACK_IMPORTED_MODULE_5__.Wn),
 /* harmony export */   jkA: () => (/* reexport safe */ d3_array__WEBPACK_IMPORTED_MODULE_0__.jk),
 /* harmony export */   l78: () => (/* reexport safe */ d3_axis__WEBPACK_IMPORTED_MODULE_1__.l7),
-/* harmony export */   lUB: () => (/* reexport safe */ d3_shape__WEBPACK_IMPORTED_MODULE_5__.lU),
-/* harmony export */   m4Y: () => (/* reexport safe */ d3_scale__WEBPACK_IMPORTED_MODULE_3__.m4),
-/* harmony export */   n8j: () => (/* reexport safe */ d3_shape__WEBPACK_IMPORTED_MODULE_5__.n8)
+/* harmony export */   lUB: () => (/* reexport safe */ d3_shape__WEBPACK_IMPORTED_MODULE_6__.lU),
+/* harmony export */   m4Y: () => (/* reexport safe */ d3_scale__WEBPACK_IMPORTED_MODULE_4__.m4),
+/* harmony export */   n8j: () => (/* reexport safe */ d3_shape__WEBPACK_IMPORTED_MODULE_6__.n8)
 /* harmony export */ });
 /* harmony import */ var d3_array__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(1388);
 /* harmony import */ var d3_axis__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(312);
 /* harmony import */ var d3_brush__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(3537);
-/* harmony import */ var d3_scale__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(1303);
-/* harmony import */ var d3_selection__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(7875);
-/* harmony import */ var d3_shape__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(6588);
-/* harmony import */ var d3_transition__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(9902);
-/* harmony import */ var d3_zoom__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(6470);
+/* harmony import */ var d3_format__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(4710);
+/* harmony import */ var d3_scale__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(1303);
+/* harmony import */ var d3_selection__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(7875);
+/* harmony import */ var d3_shape__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(6588);
+/* harmony import */ var d3_transition__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(9902);
+/* harmony import */ var d3_zoom__WEBPACK_IMPORTED_MODULE_8__ = __webpack_require__(6470);
 
 
 
@@ -8559,25 +8647,25 @@ function defaultConstrain(transform, extent, translateExtent) {
 /******/ 	
 /************************************************************************/
 var __webpack_exports__ = {};
-// This entry needs to be wrapped in an IIFE because it declares 'PlayChart_DEBUG' on top-level, which conflicts with the current library output.
+// This entry need to be wrapped in an IIFE because it declares 'PlayChart_DEBUG' on top-level, which conflicts with the current library output.
 (() => {
 __webpack_require__.r(__webpack_exports__);
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
-/* harmony export */   "default": () => (visualPlugin)
+/* harmony export */   "default": () => (__WEBPACK_DEFAULT_EXPORT__)
 /* harmony export */ });
-/* harmony import */ var visualPlugin_src_visual_WEBPACK_IMPORTED_MODULE_0_ = __webpack_require__(843);
-/* provided dependency */ var visualPlugin_window = __webpack_require__(327);
+/* harmony import */ var _src_visual__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(8205);
+/* provided dependency */ var window = __webpack_require__(327);
 
-var visualPlugin_powerbiKey = "powerbi";
-var visualPlugin_powerbi = visualPlugin_window[visualPlugin_powerbiKey];
-var visualPlugin_PlayChart_DEBUG = {
+var powerbiKey = "powerbi";
+var powerbi = window[powerbiKey];
+var PlayChart_DEBUG = {
     name: 'PlayChart_DEBUG',
     displayName: 'Play Chart',
     class: 'Visual',
     apiVersion: '5.1.0',
     create: (options) => {
-        if (visualPlugin_src_visual_WEBPACK_IMPORTED_MODULE_0_/* .Visual */ .b) {
-            return new visualPlugin_src_visual_WEBPACK_IMPORTED_MODULE_0_/* .Visual */ .b(options);
+        if (_src_visual__WEBPACK_IMPORTED_MODULE_0__/* .Visual */ .b) {
+            return new _src_visual__WEBPACK_IMPORTED_MODULE_0__/* .Visual */ .b(options);
         }
         throw 'Visual instance not found';
     },
@@ -8589,12 +8677,12 @@ var visualPlugin_PlayChart_DEBUG = {
     },
     custom: true
 };
-if (typeof visualPlugin_powerbi !== "undefined") {
-    visualPlugin_powerbi.visuals = visualPlugin_powerbi.visuals || {};
-    visualPlugin_powerbi.visuals.plugins = visualPlugin_powerbi.visuals.plugins || {};
-    visualPlugin_powerbi.visuals.plugins["PlayChart_DEBUG"] = visualPlugin_PlayChart_DEBUG;
+if (typeof powerbi !== "undefined") {
+    powerbi.visuals = powerbi.visuals || {};
+    powerbi.visuals.plugins = powerbi.visuals.plugins || {};
+    powerbi.visuals.plugins["PlayChart_DEBUG"] = PlayChart_DEBUG;
 }
-/* harmony default export */ const visualPlugin = (visualPlugin_PlayChart_DEBUG);
+/* harmony default export */ const __WEBPACK_DEFAULT_EXPORT__ = (PlayChart_DEBUG);
 
 })();
 
